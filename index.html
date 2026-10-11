@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PJSK查询">
+<title>世界计划 资料查询</title>
+<style>
+:root{--bg:#f3f6fd;--fg:#243044;--dim:#7a8699;--card:#fff;--ac:#7b61ff;--bd:#e3e8f3}
+@media(prefers-color-scheme:dark){:root{--bg:#141824;--fg:#e6eaf5;--dim:#8d97ad;--card:#1f2535;--ac:#9a86ff;--bd:#2c3348}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}h1 small{font-size:13px;color:var(--ac);font-weight:500}
+h2{font-size:18px;margin:0 0 6px}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+nav button{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:20px;padding:6px 16px;font-size:15px}
+nav button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.bar{display:flex;gap:8px;margin:10px 0}
+input,select{flex:1;min-width:0;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:10px;padding:10px 12px;font-size:16px}
+select{flex:none}
+.go{flex:none;border:0;background:var(--ac);color:#fff;border-radius:10px;padding:0 18px;font-size:16px}
+.card,.item{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.card{border-left:4px solid var(--ac)}
+.item{cursor:pointer}.item:active{border-color:var(--ac)}
+.card p{margin:4px 0}table{border-collapse:collapse;margin:6px 0}td{padding:2px 14px 2px 0}
+.dim{color:var(--dim);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border:1px solid var(--bd);background:var(--card);border-radius:16px;padding:4px 12px;cursor:pointer;font-size:15px}
+footer{margin-top:20px;font-size:12px;color:var(--dim)}
+</style></head><body><div class="wrap">
+<h1>世界计划 资料查询 <small>简中服</small></h1>
+<nav id="tabs"></nav>
+<div class="bar">
+  <select id="d"><option>easy</option><option>normal</option><option>hard</option><option>expert</option><option selected>master</option><option>append</option></select>
+  <input id="q" autocomplete="off" enterkeyhint="search">
+  <button class="go" id="go">查询</button>
+</div>
+<div id="out"></div>
+<footer>数据来自 Sekai-World 公开仓库，非官方；版权归 SEGA / Colorful Palette / Crypton。<br>暂不含：榜线、表情包、小数定数与 BPM。</footer>
+</div>
+<script>
+const _b=new URLSearchParams(location.search).get("base");
+const BASES=[...(_b?[_b.replace(/\/?$/,"/")]:[]),"https://cdn.jsdelivr.net/gh/Sekai-World/sekai-master-db-cn-diff@main/","https://raw.githubusercontent.com/Sekai-World/sekai-master-db-cn-diff/main/"];
+const CH={1:["星乃一歌","一歌","ick","ichika","星乃"],2:["天马咲希","咲希","saki"],3:["望月穗波","穗波","hnm","honami"],4:["日野森志步","志步","shiho"],5:["花里实乃理","实乃理","mnr","minori"],6:["桐谷遥","遥","hrk","haruka"],7:["桃井爱莉","爱莉","airi"],8:["日野森雫","雫","szk","shizuku"],9:["小豆泽心羽","心羽","khn","kohane"],10:["白石杏","杏","an"],11:["东云彰人","彰人","akt","akito"],12:["青柳冬弥","冬弥","toya"],13:["天马司","司","tks","tsukasa"],14:["凤笑梦","笑梦","emu"],15:["草薙宁宁","宁宁","nene"],16:["神代类","类","rui"],17:["宵崎奏","奏","knd","kanade"],18:["朝比奈真冬","真冬","mfy","mafuyu"],19:["东云绘名","绘名","ena"],20:["晓山瑞希","瑞希","mzk","mizuki"],21:["初音未来","初音","miku","mk"],22:["镜音铃","铃","rin"],23:["镜音连","连","len"],24:["巡音流歌","流歌","luka"],25:["MEIKO","meiko"],26:["KAITO","kaito"]};
+const ATTR={cute:"可爱",cool:"帅气",pure:"纯真",happy:"快乐",mysterious:"神秘"};
+const RAR={rarity_1:"★1",rarity_2:"★2",rarity_3:"★3",rarity_4:"★4",rarity_birthday:"生日"};
+const UNIT={light_sound:"Leo/need",idol:"MORE MORE JUMP!",street:"Vivid BAD SQUAD",theme_park:"Wonderlands×Showtime",school_refusal:"25时，Nightcord见。",piapro:"VIRTUAL SINGER",none:"VIRTUAL SINGER"};
+const ETYPE={marathon:"马拉松",cheerful_carnival:"欢乐嘉年华",world_bloom:"世界连接"};
+const DIFFS=["easy","normal","hard","expert","master","append"];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cname=id=>(CH[id]||["角色"+id])[0];
+const tm=ms=>new Date(ms).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:false});
+const item=(q,h)=>`<div class="item" data-q="${esc(q)}">${h}</div>`;
+const box=h=>`<div class="card">${h}</div>`;
+function findChar(k){k=k.trim().toLowerCase();if(!k)return 0;
+  for(const id in CH)if(CH[id].some(n=>n.toLowerCase()===k))return +id;
+  if(k.length>=2)for(const id in CH)if(CH[id][0].toLowerCase().includes(k))return +id;return 0}
+
+const D={},errs={};
+async function load(n){if(D[n])return D[n];
+  for(const b of BASES){try{const r=await fetch(b+n+".json");if(!r.ok)throw new Error("HTTP "+r.status);return D[n]=await r.json()}catch(e){errs[n]=e.message}}
+  throw new Error("加载 "+n+" 失败："+errs[n])}
+const L=(...n)=>Promise.all(n.map(load));
+
+async function song(k){k=k.trim().toLowerCase();if(!k)return"输入曲名关键词或编号";
+  const [ms,ds]=await L("musics","musicDifficulties");
+  const h=/^\d+$/.test(k)?ms.filter(m=>m.id==k):ms.filter(m=>(m.title||"").toLowerCase().includes(k)||(m.pronunciation||"").toLowerCase().includes(k));
+  if(!h.length)return`没找到「${esc(k)}」`;
+  if(h.length>1)return h.slice(0,30).map(m=>item(m.id,`<b>${esc(m.title)}</b> <span class="dim">#${m.id}</span>`)).join("")+(h.length>30?`<p class="dim">共${h.length}首，请缩小关键词</p>`:"");
+  const m=h[0],df={};ds.filter(d=>d.musicId==m.id).forEach(d=>df[d.musicDifficulty]=d);
+  return box(`<h2>${esc(m.title)} <span class="dim">#${m.id}</span></h2><p>作曲 ${esc(m.composer)}　作词 ${esc(m.lyricist)}　编曲 ${esc(m.arranger)}</p>${m.publishedAt?`<p class="dim">上线 ${tm(m.publishedAt)}</p>`:""}<table>${DIFFS.filter(x=>df[x]).map(x=>`<tr><td>${x.toUpperCase()}</td><td>Lv.${df[x].playLevel}</td><td class="dim">物量 ${df[x].totalNoteCount}</td></tr>`).join("")}</table><p class="dim">数据只含游戏内等级，不含小数定数与 BPM</p>`)}
+
+async function level(lv){const d=$("#d").value,[ms,ds]=await L("musics","musicDifficulties"),t={};ms.forEach(m=>t[m.id]=m.title);
+  const rows=ds.filter(x=>x.musicDifficulty==d);lv=lv.trim();
+  if(/^\d+$/.test(lv)){const h=rows.filter(x=>x.playLevel==+lv&&t[x.musicId]);
+    return h.length?`<h2>${d.toUpperCase()} Lv.${lv} 共${h.length}首</h2>`+h.map(x=>item("#"+x.musicId,esc(t[x.musicId]))).join(""):`${d.toUpperCase()} 没有 Lv.${lv}`}
+  const c={};rows.forEach(x=>c[x.playLevel]=(c[x.playLevel]||0)+1);
+  return box(`<h2>${d.toUpperCase()} 等级分布</h2><div class="chips">`+Object.keys(c).sort((a,b)=>b-a).map(l=>`<span class="chip" data-lv="${l}">Lv.${l} · ${c[l]}首</span>`).join("")+`</div><p class="dim">点等级查看曲目；数据不含小数定数</p>`)}
+
+async function card(k){k=k.trim().toLowerCase();if(!k)return"输入卡名、角色或编号";
+  const [cs,sk]=await L("cards","skills"),cid=findChar(k);
+  const h=/^\d+$/.test(k)?cs.filter(c=>c.id==k):cid?cs.filter(c=>c.characterId==cid).sort((a,b)=>(b.releaseAt||0)-(a.releaseAt||0)):cs.filter(c=>(c.prefix||"").toLowerCase().includes(k));
+  if(!h.length)return`没找到「${esc(k)}」`;
+  const line=c=>`${cname(c.characterId)} ${RAR[c.cardRarityType]||""} ${ATTR[c.attr]||""} 「${esc(c.prefix)}」`;
+  if(h.length>1)return`<p class="dim">${cid?cname(cid)+" ":""}共${h.length}张${h.length>30?"，显示最新30张":""}</p>`+h.slice(0,30).map(c=>item(c.id,`${line(c)} <span class="dim">#${c.id}</span>`)).join("");
+  const c=h[0],s=sk.find(x=>x.id==c.skillId)||{},ds=s.shortDescription||s.description;
+  return box(`<h2>${line(c)}</h2><p class="dim">#${c.id}</p>${c.cardSkillName?`<p>技能：${esc(c.cardSkillName)}</p>`:""}${ds?`<p>${esc(ds)}</p>`:""}${c.releaseAt?`<p class="dim">实装 ${tm(c.releaseAt)}</p>`:""}`)}
+
+async function chara(k){const id=findChar(k);if(!id)return"没找到这个角色，试试中文名或简称（ick / 一歌 / miku）";
+  const [g,p]=await L("gameCharacters","characterProfiles"),a=g.find(x=>x.id==id)||{},b=p.find(x=>x.characterId==id)||{};
+  const f=[["声优","characterVoice"],["生日","birthday"],["身高","height"],["学校","school"],["爱好","hobby"],["特长","specialSkill"],["喜欢的食物","favoriteFood"],["讨厌的食物","hatedFood"],["不擅长","weak"]];
+  return box(`<h2>${cname(id)} <span class="dim">${UNIT[a.unit]||""}</span></h2>`+f.filter(([,k])=>b[k]||a[k]).map(([l,k])=>`<p>${l}：${esc(b[k]||a[k])}</p>`).join("")+(b.introduction?`<p class="dim">${esc(b.introduction)}</p>`:""))}
+
+async function event(){const [es,bs,us]=await L("events","eventDeckBonuses","gameCharacterUnits"),now=Date.now();
+  const cur=es.filter(e=>e.startAt<=now&&now<=(e.closedAt||e.aggregateAt));
+  const e=cur.length?cur[cur.length-1]:es.reduce((a,b)=>b.startAt>a.startAt?b:a);
+  const bon=bs.filter(b=>b.eventId==e.id),um={};us.forEach(u=>um[u.id]=u.gameCharacterId);
+  const at=[...new Set(bon.filter(b=>b.cardAttr).map(b=>ATTR[b.cardAttr]||b.cardAttr))];
+  const ns=[...new Set(bon.map(b=>um[b.gameCharacterUnitId]).filter(Boolean).map(cname))],left=e.aggregateAt-now;
+  return box(`<h2>${esc(e.name)}</h2><p class="dim">${cur.length?"进行中":"最近一期（当前无进行中活动）"} · ${ETYPE[e.eventType]||esc(e.eventType)}</p><p>开始 ${tm(e.startAt)}<br>结束 ${tm(e.aggregateAt)}</p>${cur.length&&left>0?`<p>剩余 ${Math.floor(left/864e5)}天${Math.floor(left%864e5/36e5)}小时${Math.floor(left%36e5/6e4)}分</p>`:""}${at.length?`<p>加成属性：${at.join("、")}</p>`:""}${ns.length?`<p>加成角色：${ns.join("、")}</p>`:""}`)}
+
+const TABS={song:{n:"曲目",ph:"曲名关键词或编号",f:song},level:{n:"定数",ph:"等级，如 36（留空看分布）",f:level},card:{n:"卡牌",ph:"卡名 / 角色 / 编号",f:card},chara:{n:"角色",ph:"名字或简称，如 ick",f:chara},event:{n:"活动",f:event}};
+let tab="song";
+function setTab(t){tab=t;
+  $("#tabs").innerHTML=Object.entries(TABS).map(([k,v])=>`<button data-t="${k}" class="${k==t?"on":""}">${v.n}</button>`).join("");
+  $("#d").style.display=t=="level"?"":"none";
+  $("#q").style.display=$("#go").style.display=t=="event"?"none":"";
+  $("#q").placeholder=TABS[t].ph||"";$("#q").value="";$("#out").innerHTML="";
+  if(t=="event")run();
+  if(t=="chara")$("#out").innerHTML=`<div class="chips">`+Object.keys(CH).map(i=>`<span class="chip" data-q="${CH[i][0]}">${CH[i][0]}</span>`).join("")+`</div>`}
+async function run(){$("#out").innerHTML=`<p class="dim">加载中…（首次较慢）</p>`;
+  try{$("#out").innerHTML=await TABS[tab].f($("#q").value)}
+  catch(e){$("#out").innerHTML=box(`${esc(e.message)}<p class="dim">数据源（jsDelivr / GitHub）暂时访问不到，稍后重试或换个网络。</p>`)}}
+$("#tabs").onclick=e=>{const t=e.target.dataset.t;if(t)setTab(t)};
+$("#go").onclick=run;
+$("#q").onkeydown=e=>{if(e.key=="Enter")run()};
+$("#out").onclick=e=>{const el=e.target.closest("[data-q],[data-lv]");if(!el)return;
+  if(el.dataset.lv){$("#q").value=el.dataset.lv}
+  else{const q=el.dataset.q;if(q[0]=="#"){setTab("song");$("#q").value=q.slice(1)}else $("#q").value=q}
+  run()};
+setTab("song");
+</script></body></html>

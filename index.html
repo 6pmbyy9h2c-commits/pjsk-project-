@@ -26,9 +26,27 @@ select{flex:none}
 .dim{color:var(--dim);font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
 .chip{border:1px solid var(--bd);background:var(--card);border-radius:16px;padding:4px 12px;cursor:pointer;font-size:15px}
+body{background:linear-gradient(180deg,#dfe8ff 0,var(--bg) 260px) no-repeat,var(--bg)}
+@media(prefers-color-scheme:dark){body{background:linear-gradient(180deg,#232b4a 0,var(--bg) 260px) no-repeat,var(--bg)}}
+h1{font-size:25px;font-weight:800;display:inline-block;background:linear-gradient(90deg,#7b61ff,#2fc9b5);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h1 small{-webkit-text-fill-color:var(--ac)}
+nav button.on{box-shadow:0 4px 14px rgba(123,97,255,.4)}
+.card{border:0;border-radius:18px;padding:16px;box-shadow:0 8px 28px rgba(80,90,160,.14)}
+.item{display:flex;gap:12px;align-items:center;border:0;border-radius:14px;box-shadow:0 2px 10px rgba(80,90,160,.1)}
+.item .tx{flex:1;min-width:0}
+.pic{flex:none;width:56px;height:56px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#bda8ff,#8be3d6)}
+.im{width:100%;height:100%;object-fit:cover;display:block}
+.hero{width:170px;height:170px;margin:0 auto 12px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#bda8ff,#8be3d6);box-shadow:0 8px 24px rgba(80,90,160,.25)}
+.hero2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.hero2 .im{height:auto;border-radius:12px;box-shadow:0 4px 14px rgba(80,90,160,.2)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.grid .item{flex-direction:column;align-items:stretch;text-align:center;padding:8px;font-size:14px}
+.grid .pic{width:100%;height:auto;aspect-ratio:1}
+@media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr)}}
+.svsel{flex:none;width:auto;margin-left:6px;padding:4px 10px;font-size:14px;border-radius:16px;vertical-align:middle}
 footer{margin-top:20px;font-size:12px;color:var(--dim)}
 </style></head><body><div class="wrap">
-<h1>世界计划 资料查询 <small>简中服</small></h1>
+<h1>世界计划 资料查询</h1> <select id="sv" class="svsel"></select>
 <nav id="tabs"></nav>
 <div class="bar">
   <select id="d"><option>easy</option><option>normal</option><option>hard</option><option>expert</option><option selected>master</option><option>append</option></select>
@@ -36,11 +54,13 @@ footer{margin-top:20px;font-size:12px;color:var(--dim)}
   <button class="go" id="go">查询</button>
 </div>
 <div id="out"></div>
-<footer>数据来自 Sekai-World 公开仓库，非官方；版权归 SEGA / Colorful Palette / Crypton。<br>暂不含：榜线、表情包、小数定数与 BPM。</footer>
+<footer>数据来自 Sekai-World 公开仓库，图片来自 storage.exmeaning.com，非官方；版权归 SEGA / Colorful Palette / Crypton。<br>暂不含：榜线、表情包、小数定数与 BPM。</footer>
 </div>
 <script>
 const _b=new URLSearchParams(location.search).get("base");
-const BASES=[...(_b?[_b.replace(/\/?$/,"/")]:[]),"https://cdn.jsdelivr.net/gh/Sekai-World/sekai-master-db-cn-diff@main/","https://raw.githubusercontent.com/Sekai-World/sekai-master-db-cn-diff/main/"];
+const SV={cn:{n:"简中服",repo:"sekai-master-db-cn-diff",img:"sekai-cn-assets"},jp:{n:"日服",repo:"sekai-master-db-diff",img:"sekai-jp-assets"},tc:{n:"港澳台服",repo:"sekai-master-db-tc-diff",img:"sekai-tc-assets"}};
+let sv="cn";try{sv=localStorage.getItem("sv")||"cn"}catch(e){}if(!SV[sv])sv="cn";
+const bases=()=>[...(_b?[_b.replace(/\/?$/,"/")]:[]),`https://cdn.jsdelivr.net/gh/Sekai-World/${SV[sv].repo}@main/`,`https://raw.githubusercontent.com/Sekai-World/${SV[sv].repo}/main/`];
 const CH={1:["星乃一歌","一歌","ick","ichika","星乃"],2:["天马咲希","咲希","saki"],3:["望月穗波","穗波","hnm","honami"],4:["日野森志步","志步","shiho"],5:["花里实乃理","实乃理","mnr","minori"],6:["桐谷遥","遥","hrk","haruka"],7:["桃井爱莉","爱莉","airi"],8:["日野森雫","雫","szk","shizuku"],9:["小豆泽心羽","心羽","khn","kohane"],10:["白石杏","杏","an"],11:["东云彰人","彰人","akt","akito"],12:["青柳冬弥","冬弥","toya"],13:["天马司","司","tks","tsukasa"],14:["凤笑梦","笑梦","emu"],15:["草薙宁宁","宁宁","nene"],16:["神代类","类","rui"],17:["宵崎奏","奏","knd","kanade"],18:["朝比奈真冬","真冬","mfy","mafuyu"],19:["东云绘名","绘名","ena"],20:["晓山瑞希","瑞希","mzk","mizuki"],21:["初音未来","初音","miku","mk"],22:["镜音铃","铃","rin"],23:["镜音连","连","len"],24:["巡音流歌","流歌","luka"],25:["MEIKO","meiko"],26:["KAITO","kaito"]};
 const ATTR={cute:"可爱",cool:"帅气",pure:"纯真",happy:"快乐",mysterious:"神秘"};
 const RAR={rarity_1:"★1",rarity_2:"★2",rarity_3:"★3",rarity_4:"★4",rarity_birthday:"生日"};
@@ -50,16 +70,22 @@ const DIFFS=["easy","normal","hard","expert","master","append"];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const cname=id=>(CH[id]||["角色"+id])[0];
-const tm=ms=>new Date(ms).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:false});
-const item=(q,h)=>`<div class="item" data-q="${esc(q)}">${h}</div>`;
+const tm=ms=>new Date(ms).toLocaleString("zh-CN",{timeZone:sv=="jp"?"Asia/Tokyo":"Asia/Shanghai",hour12:false});
+let IMG=`https://storage.exmeaning.com/${SV[sv].img}/`;
+const hide="this.onerror=null;this.style.display='none'";
+const im=(p,c="")=>`<img class="im ${c}" loading="lazy" referrerpolicy="no-referrer" src="${IMG}${p}" onerror="${hide}" alt="">`;
+const cardImg=(c,t="normal")=>im(`character/member/${c.assetbundleName}/card_${t}.webp`);
+const thumb=c=>`<img class="im" loading="lazy" referrerpolicy="no-referrer" src="${IMG}thumbnail/chara/${c.assetbundleName}_normal.webp" onerror="this.onerror=function(){${hide}};this.src='${IMG}character/member/${c.assetbundleName}/card_normal.webp'" alt="">`;
+const jacket=m=>im(`music/jacket/${m.assetbundleName}/${m.assetbundleName}.webp`);
+const item=(q,h,pic)=>`<div class="item" data-q="${esc(q)}">${pic?`<div class="pic">${pic}</div>`:""}<div class="tx">${h}</div></div>`;
 const box=h=>`<div class="card">${h}</div>`;
 function findChar(k){k=k.trim().toLowerCase();if(!k)return 0;
   for(const id in CH)if(CH[id].some(n=>n.toLowerCase()===k))return +id;
   if(k.length>=2)for(const id in CH)if(CH[id][0].toLowerCase().includes(k))return +id;return 0}
 
-const D={},errs={};
-async function load(n){if(D[n])return D[n];
-  for(const b of BASES){try{const r=await fetch(b+n+".json");if(!r.ok)throw new Error("HTTP "+r.status);return D[n]=await r.json()}catch(e){errs[n]=e.message}}
+const D={cn:{},jp:{},tc:{}},errs={};
+async function load(n){const s=sv,B=bases();if(D[s][n])return D[s][n];
+  for(const b of B){try{const r=await fetch(b+n+".json");if(!r.ok)throw new Error("HTTP "+r.status);return D[s][n]=await r.json()}catch(e){errs[n]=e.message}}
   throw new Error("加载 "+n+" 失败："+errs[n])}
 const L=(...n)=>Promise.all(n.map(load));
 
@@ -67,14 +93,14 @@ async function song(k){k=k.trim().toLowerCase();if(!k)return"输入曲名关键�
   const [ms,ds]=await L("musics","musicDifficulties");
   const h=/^\d+$/.test(k)?ms.filter(m=>m.id==k):ms.filter(m=>(m.title||"").toLowerCase().includes(k)||(m.pronunciation||"").toLowerCase().includes(k));
   if(!h.length)return`没找到「${esc(k)}」`;
-  if(h.length>1)return h.slice(0,30).map(m=>item(m.id,`<b>${esc(m.title)}</b> <span class="dim">#${m.id}</span>`)).join("")+(h.length>30?`<p class="dim">共${h.length}首，请缩小关键词</p>`:"");
+  if(h.length>1)return h.slice(0,30).map(m=>item(m.id,`<b>${esc(m.title)}</b> <span class="dim">#${m.id}</span>`,jacket(m))).join("")+(h.length>30?`<p class="dim">共${h.length}首，请缩小关键词</p>`:"");
   const m=h[0],df={};ds.filter(d=>d.musicId==m.id).forEach(d=>df[d.musicDifficulty]=d);
-  return box(`<h2>${esc(m.title)} <span class="dim">#${m.id}</span></h2><p>作曲 ${esc(m.composer)}　作词 ${esc(m.lyricist)}　编曲 ${esc(m.arranger)}</p>${m.publishedAt?`<p class="dim">上线 ${tm(m.publishedAt)}</p>`:""}<table>${DIFFS.filter(x=>df[x]).map(x=>`<tr><td>${x.toUpperCase()}</td><td>Lv.${df[x].playLevel}</td><td class="dim">物量 ${df[x].totalNoteCount}</td></tr>`).join("")}</table><p class="dim">数据只含游戏内等级，不含小数定数与 BPM</p>`)}
+  return box(`<div class="hero">${jacket(m)}</div><h2>${esc(m.title)} <span class="dim">#${m.id}</span></h2><p>作曲 ${esc(m.composer)}　作词 ${esc(m.lyricist)}　编曲 ${esc(m.arranger)}</p>${m.publishedAt?`<p class="dim">上线 ${tm(m.publishedAt)}</p>`:""}<table>${DIFFS.filter(x=>df[x]).map(x=>`<tr><td>${x.toUpperCase()}</td><td>Lv.${df[x].playLevel}</td><td class="dim">物量 ${df[x].totalNoteCount}</td></tr>`).join("")}</table><p class="dim">数据只含游戏内等级，不含小数定数与 BPM</p>`)}
 
-async function level(lv){const d=$("#d").value,[ms,ds]=await L("musics","musicDifficulties"),t={};ms.forEach(m=>t[m.id]=m.title);
+async function level(lv){const d=$("#d").value,[ms,ds]=await L("musics","musicDifficulties"),t={},mm={};ms.forEach(m=>{t[m.id]=m.title;mm[m.id]=m});
   const rows=ds.filter(x=>x.musicDifficulty==d);lv=lv.trim();
   if(/^\d+$/.test(lv)){const h=rows.filter(x=>x.playLevel==+lv&&t[x.musicId]);
-    return h.length?`<h2>${d.toUpperCase()} Lv.${lv} 共${h.length}首</h2>`+h.map(x=>item("#"+x.musicId,esc(t[x.musicId]))).join(""):`${d.toUpperCase()} 没有 Lv.${lv}`}
+    return h.length?`<h2>${d.toUpperCase()} Lv.${lv} 共${h.length}首</h2>`+h.map(x=>item("#"+x.musicId,esc(t[x.musicId]),jacket(mm[x.musicId]))).join(""):`${d.toUpperCase()} 没有 Lv.${lv}`}
   const c={};rows.forEach(x=>c[x.playLevel]=(c[x.playLevel]||0)+1);
   return box(`<h2>${d.toUpperCase()} 等级分布</h2><div class="chips">`+Object.keys(c).sort((a,b)=>b-a).map(l=>`<span class="chip" data-lv="${l}">Lv.${l} · ${c[l]}首</span>`).join("")+`</div><p class="dim">点等级查看曲目；数据不含小数定数</p>`)}
 
@@ -83,14 +109,14 @@ async function card(k){k=k.trim().toLowerCase();if(!k)return"输入卡名、角�
   const h=/^\d+$/.test(k)?cs.filter(c=>c.id==k):cid?cs.filter(c=>c.characterId==cid).sort((a,b)=>(b.releaseAt||0)-(a.releaseAt||0)):cs.filter(c=>(c.prefix||"").toLowerCase().includes(k));
   if(!h.length)return`没找到「${esc(k)}」`;
   const line=c=>`${cname(c.characterId)} ${RAR[c.cardRarityType]||""} ${ATTR[c.attr]||""} 「${esc(c.prefix)}」`;
-  if(h.length>1)return`<p class="dim">${cid?cname(cid)+" ":""}共${h.length}张${h.length>30?"，显示最新30张":""}</p>`+h.slice(0,30).map(c=>item(c.id,`${line(c)} <span class="dim">#${c.id}</span>`)).join("");
+  if(h.length>1)return`<p class="dim">${cid?cname(cid)+" ":""}共${h.length}张${h.length>30?"，显示最新30张":""}</p>`+`<div class="grid">`+h.slice(0,30).map(c=>item(c.id,`<b>#${c.id} ${cname(c.characterId)}</b><br><span class="dim">${RAR[c.cardRarityType]||""} ${ATTR[c.attr]||""} ${esc(c.prefix)}</span>`,thumb(c))).join("")+"</div>";
   const c=h[0],s=sk.find(x=>x.id==c.skillId)||{},ds=s.shortDescription||s.description;
-  return box(`<h2>${line(c)}</h2><p class="dim">#${c.id}</p>${c.cardSkillName?`<p>技能：${esc(c.cardSkillName)}</p>`:""}${ds?`<p>${esc(ds)}</p>`:""}${c.releaseAt?`<p class="dim">实装 ${tm(c.releaseAt)}</p>`:""}`)}
+  return box(`<div class="hero2">${cardImg(c)}${["rarity_3","rarity_4","rarity_birthday"].includes(c.cardRarityType)?cardImg(c,"after_training"):""}</div><h2>${line(c)}</h2><p class="dim">#${c.id}</p>${c.cardSkillName?`<p>技能：${esc(c.cardSkillName)}</p>`:""}${ds?`<p>${esc(ds)}</p>`:""}${c.releaseAt?`<p class="dim">实装 ${tm(c.releaseAt)}</p>`:""}`)}
 
 async function chara(k){const id=findChar(k);if(!id)return"没找到这个角色，试试中文名或简称（ick / 一歌 / miku）";
-  const [g,p]=await L("gameCharacters","characterProfiles"),a=g.find(x=>x.id==id)||{},b=p.find(x=>x.characterId==id)||{};
+  const [g,p,cs]=await L("gameCharacters","characterProfiles","cards"),lc=cs.filter(c=>c.characterId==id).sort((x,y)=>(y.releaseAt||0)-(x.releaseAt||0))[0],a=g.find(x=>x.id==id)||{},b=p.find(x=>x.characterId==id)||{};
   const f=[["声优","characterVoice"],["生日","birthday"],["身高","height"],["学校","school"],["爱好","hobby"],["特长","specialSkill"],["喜欢的食物","favoriteFood"],["讨厌的食物","hatedFood"],["不擅长","weak"]];
-  return box(`<h2>${cname(id)} <span class="dim">${UNIT[a.unit]||""}</span></h2>`+f.filter(([,k])=>b[k]||a[k]).map(([l,k])=>`<p>${l}：${esc(b[k]||a[k])}</p>`).join("")+(b.introduction?`<p class="dim">${esc(b.introduction)}</p>`:""))}
+  return box((lc?`<div class="hero2">${cardImg(lc)}</div>`:"")+`<h2>${cname(id)} <span class="dim">${UNIT[a.unit]||""}</span></h2>`+f.filter(([,k])=>b[k]||a[k]).map(([l,k])=>`<p>${l}：${esc(b[k]||a[k])}</p>`).join("")+(b.introduction?`<p class="dim">${esc(b.introduction)}</p>`:""))}
 
 async function event(){const [es,bs,us]=await L("events","eventDeckBonuses","gameCharacterUnits"),now=Date.now();
   const cur=es.filter(e=>e.startAt<=now&&now<=(e.closedAt||e.aggregateAt));
@@ -119,5 +145,7 @@ $("#out").onclick=e=>{const el=e.target.closest("[data-q],[data-lv]");if(!el)ret
   if(el.dataset.lv){$("#q").value=el.dataset.lv}
   else{const q=el.dataset.q;if(q[0]=="#"){setTab("song");$("#q").value=q.slice(1)}else $("#q").value=q}
   run()};
+$("#sv").innerHTML=Object.entries(SV).map(([k,v])=>`<option value="${k}"${k==sv?" selected":""}>${v.n}</option>`).join("");
+$("#sv").onchange=e=>{sv=e.target.value;try{localStorage.setItem("sv",sv)}catch(x){}IMG=`https://storage.exmeaning.com/${SV[sv].img}/`;setTab(tab)};
 setTab("song");
 </script></body></html>
